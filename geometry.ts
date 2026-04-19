@@ -297,6 +297,52 @@ export const calculateStrips = (params: PatternParams): StripData[] => {
                 }
                 break;
             }
+
+            case 'CITYSCAPE': {
+                // Generative pseudo-random skyline
+                // Each "building" spans a few slices
+                const buildingWidth = Math.max(1, Math.floor(sliceCount / (5 + fractalIteration * 2)));
+                const buildingIndex = Math.floor(i / buildingWidth);
+                // Seed based on building block
+                const bHeight = Math.abs(seededRandom(seed + buildingIndex * 100));
+                
+                // Add a small gap between buildings natively in the math
+                const isGap = (i % buildingWidth === buildingWidth - 1);
+                
+                if (isGap) {
+                    size = minSize;
+                } else {
+                    size = minSize + bHeight * amplitude;
+                }
+                break;
+            }
+
+            case 'HEART': {
+                // Heart shape (vertical projection)
+                // Using standard parametric heart equation mapped to x
+                // Let's create a heart profile
+                const centerIdx = sliceCount / 2;
+                // t mapping: from -1.5 to 1.5 roughly covers the heart lobe width
+                const tHeart = (i - centerIdx) / (sliceCount / 2); // -1 to 1
+                
+                const absT = Math.abs(tHeart);
+                if (absT > 1.0) {
+                    size = minSize;
+                    break;
+                }
+                
+                // Outer equation of heart curve: x^2 + (y - (x^2)^(1/3))^2 = 1 -> y = (x^2)^(1/3) +/- sqrt(1 - x^2)
+                // For a 3D pop-up, we just want the upper lobe height. 
+                // Upper bound: y = x^(2/3) + sqrt(1 - x^2)
+                const upperY = Math.pow(absT, 0.666) + Math.sqrt(Math.max(0, 1 - absT * absT));
+                const lowerY = Math.pow(absT, 0.666) - Math.sqrt(Math.max(0, 1 - absT * absT)); 
+                
+                // Total height at this slice
+                const heightY = upperY - lowerY; 
+                
+                size = minSize + (heightY / 2.5) * amplitude; // Normalized a bit
+                break;
+            }
         }
 
         strips.push({

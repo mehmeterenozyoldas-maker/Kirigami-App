@@ -181,7 +181,8 @@ const PaperStrip: React.FC<{
   isGhost?: boolean;
   showStress?: boolean;
   opacity?: number;
-}> = ({ width, height, color, tension = 0, isGhost = false, showStress = false, opacity = 1.0 }) => {
+  params: PatternParams; // Added to pass material type
+}> = ({ width, height, color, tension = 0, isGhost = false, showStress = false, opacity = 1.0, params }) => {
   
   // STRICT GUARD: Prevent invalid geometry creation
   if (!isSafe(width) || !isSafe(height) || width < EPSILON || height < EPSILON) {
@@ -193,7 +194,7 @@ const PaperStrip: React.FC<{
   // Reactive Stress: Pulse effect
   useFrame(({ clock }) => {
       if (meshRef.current && showStress && !isGhost && tension > 0.5) {
-          const mat = meshRef.current.material as THREE.MeshStandardMaterial;
+          const mat = meshRef.current.material as THREE.MeshPhysicalMaterial;
           // Pulse speed depends on tension
           const t = Math.sin(clock.getElapsedTime() * (5 + tension * 10)) * 0.5 + 0.5; 
           // Interpolate emissive color
@@ -201,34 +202,52 @@ const PaperStrip: React.FC<{
           mat.emissive.lerpColors(new THREE.Color('#000000'), stressColor, t * (tension - 0.4));
           mat.emissiveIntensity = t * 2;
       } else if (meshRef.current) {
-          (meshRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
+          (meshRef.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0;
       }
   });
 
   const materialColor = useMemo(() => {
-    const c = new THREE.Color(color);
+    let c = new THREE.Color(color);
+    if (params.paperMaterial === 'HOLOGRAPHIC_FOIL' && !isGhost) {
+        c = new THREE.Color('#f1f5f9'); // Lighter base for foil
+    }
+    
     if (showStress && !isGhost) {
       // Static base color interpolation
       const t = Math.min(1.0, Math.max(0, tension || 0));
       c.lerp(new THREE.Color('#ef4444'), t * t * 0.5); 
     }
     return c;
-  }, [color, showStress, isGhost, tension]);
+  }, [color, showStress, isGhost, tension, params.paperMaterial]);
 
-  const edgeColor = isGhost ? "#a0a0a0" : "#cbd5e1";
+  const edgeColor = isGhost ? "#a0a0a0" : (params.paperMaterial === 'HOLOGRAPHIC_FOIL' ? '#94a3b8' : "#cbd5e1");
+
+  // Determine Physical Material settings based on Paper Type
+  const physicalProps = useMemo(() => {
+     if (isGhost) return { roughness: 0.8, metalness: 0, transmission: 0, clearcoat: 0, iridescence: 0 };
+     switch(params.paperMaterial) {
+         case 'TRANSLUCENT_VELLUM':
+             return { roughness: 0.2, metalness: 0.1, transmission: 0.8, ior: 1.2, thickness: 1.0, clearcoat: 0 };
+         case 'HOLOGRAPHIC_FOIL':
+             return { roughness: 0.1, metalness: 0.8, transmission: 0, iridescence: 1.0, iridescenceIOR: 1.5, clearcoat: 1.0 };
+         case 'MATTE_CARDSTOCK':
+         default:
+             return { roughness: 0.9, metalness: 0.05, transmission: 0, clearcoat: 0, iridescence: 0 };
+     }
+  }, [params.paperMaterial, isGhost]);
+
 
   return (
-    <mesh ref={meshRef}>
+    <mesh ref={meshRef} castShadow receiveShadow>
       <planeGeometry args={[width, height]} />
-      <meshStandardMaterial
+      <meshPhysicalMaterial
         color={materialColor}
         side={THREE.DoubleSide}
-        roughness={0.8}
-        metalness={0.1}
-        transparent={opacity < 1.0}
+        transparent={opacity < 1.0 || params.paperMaterial === 'TRANSLUCENT_VELLUM'}
         opacity={opacity}
         polygonOffset={true}
         polygonOffsetFactor={isGhost ? 2 : 1}
+        {...physicalProps}
       />
       {!isGhost && <Edges color={edgeColor} threshold={15} />}
     </mesh>
@@ -266,7 +285,7 @@ const KirigamiMesh: React.FC<{
         if (!isSafe(w) || !isSafe(h)) return;
         els.push(
             <group key={key} position={pos} rotation={rot}>
-                <PaperStrip width={w} height={h} color={col} tension={tension} isGhost={isGhost} showStress={showStress} opacity={opacity} />
+                <PaperStrip width={w} height={h} color={col} tension={tension} isGhost={isGhost} showStress={showStress} opacity={opacity} params={params} />
             </group>
         );
     };
@@ -299,10 +318,10 @@ const KirigamiMesh: React.FC<{
         els.push(
             <group key="margins_top" rotation={[currentAngle, 0, 0]}>
                 <group position={[leftMarginX, topY, 0]}>
-                    <PaperStrip width={marginWidth} height={halfH} color='#fdfbf7' isGhost={isGhost} opacity={opacity} />
+                    <PaperStrip width={marginWidth} height={halfH} color='#fdfbf7' isGhost={isGhost} opacity={opacity} params={params} />
                 </group>
                 <group position={[rightMarginX, topY, 0]}>
-                    <PaperStrip width={marginWidth} height={halfH} color='#fdfbf7' isGhost={isGhost} opacity={opacity} />
+                    <PaperStrip width={marginWidth} height={halfH} color='#fdfbf7' isGhost={isGhost} opacity={opacity} params={params} />
                 </group>
             </group>
         );
@@ -323,7 +342,7 @@ const KirigamiMesh: React.FC<{
             els.push(
                 <group key={`s_top_${i}`} rotation={[currentAngle, 0, 0]}>
                      <group position={[x, y, 0]}>
-                        <PaperStrip width={w} height={h} color="#fdfbf7" isGhost={isGhost} opacity={opacity} />
+                        <PaperStrip width={w} height={h} color="#fdfbf7" isGhost={isGhost} opacity={opacity} params={params} />
                      </group>
                 </group>
             );
@@ -415,7 +434,7 @@ const KirigamiMesh: React.FC<{
             els.push(
                <group key={`gap_t_${i}`} rotation={[currentAngle, 0, 0]}>
                    <group position={[gapX, topY, 0]}>
-                       <PaperStrip width={gap} height={halfH} color='#fdfbf7' isGhost={isGhost} opacity={opacity} />
+                       <PaperStrip width={gap} height={halfH} color='#fdfbf7' isGhost={isGhost} opacity={opacity} params={params} />
                    </group>
                </group>
             );
@@ -486,12 +505,33 @@ const SceneContent: React.FC<Props> = (props) => {
             <PencilReference visible={props.params.showScaleRef} />
 
             <Environment preset="city" />
+            
+            <directionalLight 
+                position={[
+                    Math.cos(props.params.lampAngle * Math.PI / 180) * props.params.lampDistance, 
+                    props.params.lampHeight, 
+                    Math.sin(props.params.lampAngle * Math.PI / 180) * props.params.lampDistance
+                ]} 
+                intensity={1.5} 
+                castShadow 
+                shadow-mapSize={[2048, 2048]}
+                shadow-camera-near={10}
+                shadow-camera-far={2000}
+                shadow-camera-left={-250}
+                shadow-camera-right={250}
+                shadow-camera-top={250}
+                shadow-camera-bottom={-250}
+                shadow-bias={-0.0005}
+            />
+
             <ContactShadows 
                 position={[0, -50, 0]} 
-                opacity={0.4} 
+                opacity={0.6} 
                 scale={1000} 
-                blur={2.5} 
+                blur={2.0} 
                 far={100} 
+                resolution={1024}
+                color="#8899aa"
             />
 
             <OrbitControls 
@@ -509,7 +549,7 @@ export const Visualizer3D: React.FC<Props> = (props) => {
   return (
     <div className="h-full w-full bg-slate-50">
       <Canvas 
-        shadows={false} 
+        shadows={true} 
         dpr={[1, 1.5]} 
         camera={{ position: [300, 300, 300], fov: 40 }}
       >

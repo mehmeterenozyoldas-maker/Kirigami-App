@@ -116,11 +116,13 @@ export const ControlPanel: React.FC<Props> = ({
                      <optgroup label="Math & Stats">
                         <option value="GAUSSIAN">Gaussian Pulse</option>
                         <option value="NOISE">Computational Noise</option>
+                        <option value="HEART">Cardioid Heart</option>
                      </optgroup>
                      <optgroup label="Advanced Fractals">
                         <option value="MANDELBROT">Mandelbrot Set</option>
                         <option value="KOCH">Koch Snowflake</option>
                         <option value="LSYSTEM">L-System Tree</option>
+                        <option value="CITYSCAPE">Generative Cityscape</option>
                      </optgroup>
                  </select>
                  <div className="absolute right-3 top-3 pointer-events-none text-slate-400">
@@ -130,6 +132,31 @@ export const ControlPanel: React.FC<Props> = ({
           </div>
 
           <div className="h-px bg-slate-200" />
+
+          {/* Paper Material Selector */}
+          <div className="space-y-2">
+             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Paper Material</label>
+             <div className="flex gap-2">
+                <button 
+                  onClick={() => updateParam('paperMaterial', 'MATTE_CARDSTOCK')}
+                  className={`flex-1 py-2 text-xs font-medium rounded-md border ${params.paperMaterial === 'MATTE_CARDSTOCK' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                >
+                  Matte
+                </button>
+                <button 
+                  onClick={() => updateParam('paperMaterial', 'TRANSLUCENT_VELLUM')}
+                  className={`flex-1 py-2 text-xs font-medium rounded-md border ${params.paperMaterial === 'TRANSLUCENT_VELLUM' ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                >
+                  Vellum
+                </button>
+                <button 
+                  onClick={() => updateParam('paperMaterial', 'HOLOGRAPHIC_FOIL')}
+                  className={`flex-1 py-2 text-xs font-medium rounded-md border ${params.paperMaterial === 'HOLOGRAPHIC_FOIL' ? 'bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300 text-slate-900 border-purple-400' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                >
+                  Foil
+                </button>
+             </div>
+          </div>
 
           {/* Scale Ref - UX Improvement */}
           <div className="flex items-center justify-between">

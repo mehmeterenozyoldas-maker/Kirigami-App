@@ -40,6 +40,7 @@ const INITIAL_PARAMS: PatternParams = {
   showStress: false,
   showGhostTrails: false,
   showScaleRef: false,
+  paperMaterial: 'MATTE_CARDSTOCK',
 
   // Lighting
   lampAngle: 45,
@@ -94,6 +95,7 @@ const useSmoothParams = (target: PatternParams) => {
       next.showStress = target.showStress;
       next.showGhostTrails = target.showGhostTrails;
       next.showScaleRef = target.showScaleRef;
+      next.paperMaterial = target.paperMaterial;
 
       if (needsUpdate) {
          setCurrent(next);

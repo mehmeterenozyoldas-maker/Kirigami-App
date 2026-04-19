@@ -1,5 +1,6 @@
 {
   "name": "Kirigami Teaching Lab  v3 ",
   "description": "An interactive digital twin for designing, visualizing, and learning how to construct parametric pop-up patterns.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": []
 }

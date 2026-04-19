@@ -21,7 +21,9 @@ export type DesignMode =
   | 'RADIAL_DOME'    // New: Ullagami Ex 2 (Geometric Sphere)
   | 'RIPPLES'        // New: Concentric Waves
   | 'TORUS'          // New: Donut shape
-  | 'HEMISPHERE';    // New: Smooth Dome
+  | 'HEMISPHERE'     // New: Smooth Dome
+  | 'CITYSCAPE'      // New: Random stepped buildings
+  | 'HEART';         // New: Cardioid/Heart shape
 
 export interface Point2D {
   x: number;
@@ -49,6 +51,8 @@ export interface KirigamiPattern {
   width: number;
   height: number;
 }
+
+export type PaperMaterial = 'MATTE_CARDSTOCK' | 'TRANSLUCENT_VELLUM' | 'HOLOGRAPHIC_FOIL';
 
 export interface PatternParams {
   mode: DesignMode;
@@ -82,6 +86,7 @@ export interface PatternParams {
   showStress: boolean;
   showGhostTrails: boolean;
   showScaleRef: boolean; // New: Toggle for the pencil scale reference
+  paperMaterial: PaperMaterial; // Render material
 
   // Lighting & Atmosphere
   lampAngle: number;    // 0-360 degrees around the object
